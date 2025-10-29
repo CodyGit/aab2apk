@@ -1,0 +1,184 @@
+<!--  
+ @author: cody
+ @date: 2024-7-12
+ @desc: AAB导出APK 
+-->
+<!DOCTYPE html>
+ <html>
+ <head>
+    <meta content="text/html;charset=utf-8" style="background:Aqua;text-align:center;">
+    <HTA:APPLICATION
+    ID="aabToApk"
+    APPLICATIONNAME="aabToApk"
+    ICON="images/cody.ico"/>
+    <title>AAB导出APK</title>
+    <style>
+        .over {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f5f5f5;
+            opacity: 0.2;
+            z-index: 1000;
+        }
+
+        .layout {
+            display: none;
+            position: absolute;
+            top: 40%;
+            left: 40%;
+            width: 20%;
+            height: 20%;
+            z-index: 1001;
+            opacity: 0.2;
+            text-align: center;
+        }
+    </style>
+    <script src="js/jquery.min.js" ></script>
+    <script>
+    window.resizeTo(600,360);
+
+    //https://learn.microsoft.com/zh-cn/office/vba/language/reference/user-interface-help/file-object
+    var fso = new ActiveXObject("Scripting.FileSystemObject")
+    var sapp = new ActiveXObject("Shell.Application")
+    function load_keystore(){
+        var folder = fso.GetFolder(".")
+        var files = new Enumerator(folder.Files)
+        var option_content = []
+        var select_dom = document.getElementById('keystore')
+        for (; !files.atEnd(); files.moveNext()) {
+            var f = files.item()
+            if (f.Name.indexOf(".properties") > 0) {
+                var option_dom = document.createElement('option');
+                option_dom.text = f.Name;
+                option_dom.value = f.Path;
+                select_dom.add(option_dom);
+            }
+        }
+    }
+
+    function select_aab(){
+        var aab_input = document.getElementById('aab_input')
+        aab_input.style.width = (aab_input.value.length*10) + "px"
+    }
+
+    function export_click(){
+        var select_dom = document.getElementById('keystore')
+        var keystore_config = select_dom.value
+        if (keystore_config == ""){
+            alert("没有找到相应的证书配置")
+            return
+        }
+        var aab_input = document.getElementById('aab_input')
+        var aab_path = aab_input.value
+        if(aab_path.substring(aab_path.length-4) != ".aab") {
+            loading(true)
+            alert("请选择一个正确的aab文件！！！")
+            return
+        }
+
+        var config_dict = parse_keystore_config(keystore_config)
+        aab_to_apk(aab_path, config_dict)
+    }
+
+    function parse_keystore_config(keystore_config_path){
+        var keystore_file = fso.GetFile(keystore_config_path)
+        var text_stream = keystore_file.OpenAsTextStream()
+        var config_dict = {}
+        while(!text_stream.AtEndOfStream) {
+            var content_arr = text_stream.ReadLine().split("=")
+            if (content_arr.length == 2){
+                config_dict[content_arr[0]] = content_arr[1]
+            }
+        }
+        text_stream.Close()
+        return config_dict
+    }
+
+    var wsh = new ActiveXObject("WScript.Shell")
+    function aab_to_apk(aab_path, keystore){
+        var output_apks = gen_time_str()+".apks"
+        var cmd_list = []
+        // cmd_list.push("cmd /c")
+        cmd_list.push("java -jar ./bundletool.jar build-apks")
+        cmd_list.push("--mode=universal")
+        cmd_list.push("--bundle=" + aab_path)
+        cmd_list.push("--output=./" + output_apks)
+        cmd_list.push("--ks=./" + keystore["key.store"])
+        cmd_list.push("--ks-pass=pass:"+keystore["key.store.password"])
+        cmd_list.push("--ks-key-alias="+keystore["key.alias"])
+        cmd_list.push("--key-pass=pass:"+keystore["key.alias.password"])
+        loading(true)
+        run_cmd(cmd_list.join(" "), function(){
+            loading(false)
+            alert("导出成功")
+            wsh.Run("winrar " + output_apks)
+        })
+    }
+
+    function gen_time_str(){
+        var date = new Date()
+        return date.getFullYear() 
+            + "-" + (date.getMonth()+1) 
+            + "-" + (date.getDate())
+            + "-" + (date.getHours())
+            + "-" + (date.getMinutes())
+            + "-" + (date.getSeconds())
+    }
+    
+    function open_dir(dir_path){
+        var folder = sapp.Namespace(dir_path);
+        sapp.Explore(folder)
+    }
+
+    $("body").ready(function(){
+        load_keystore()
+        // document.getElementById("layout").style.filter = 'alpha(opacity=' + 10 + ')';
+    })
+
+    function loading(is_show) {
+        if (is_show) {
+            $("#over").show();
+            $("#layout").show();
+        } else {
+            $("#over").hide();
+            $("#layout").hide();
+        }
+    }
+
+    function run_cmd(command, cb) {
+        var exec = wsh.Exec(command);
+        // 使用定时器轮询检查ExitCode
+        var interval = setInterval(function() {
+        if(exec.ExitCode != null) {
+            if(exec.Status != 0) {
+                clearInterval(interval); // 停止轮询
+                cb()
+            }
+        }
+        }, 100); // 每100毫秒检查一次
+    }
+
+    </script>
+ </head>
+ <body>
+    <div id="over" class="over"></div>
+    <div id="layout" class="layout">
+        <img src="images/loading.gif"/>
+    </div>
+    <center>
+    <h1>AAB导出APK</h1>
+    <p>选择需要转换的aab文件</p>
+    <input type="file" id="aab_input" onchange="select_aab()" />
+    <p>选择证书</p>
+    <select id="keystore">
+    </select>
+    <br/>
+    <br/>
+    <button onclick="export_click()">导出</button>
+    </center>
+ </body>
+ </html>
