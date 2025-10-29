@@ -6,12 +6,13 @@ Google Play 自2021年8月起强制要求新应用必须使用AAB格式提交，
 
 ## 环境搭建
 
-1. 安装JDK（如果已经安装可以跳过）
-2. 安装WinRAR（如果已经安装可以跳过）
+1. clone仓库
+2. 安装JDK（如果已经安装可以跳过）
+3. 安装WinRAR（如果已经安装可以跳过）
     * 因为使用bundletool转换出来的是一个压缩包（xxx.apks），需要做一次解压，我这里使用的是winrar
     * 下载地址：https://www.win-rar.com/download.html
     * 如果想使用其他解压工具，请跳转到 [自定义解压工具](#自定义解压工具)
-3. 项目中自带了一份bundletool.jar，版本是1.15.1，如果不满足需求请自行下载对应版本的bundletool.jar
+4. 项目中自带了一份bundletool.jar，版本是1.15.1，如果不满足需求请自行下载对应版本的bundletool.jar
     * 下载地址：https://github.com/google/bundletool/releases
     * 下载完成后需要将名字修改成bundletool.jar，替换项目中的bundletool.jar
 
