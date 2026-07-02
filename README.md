@@ -1,5 +1,9 @@
 # AAB导出APK
 
+## 特别说明
+
+有人反馈本项目使用起来比较繁琐且只支持windows平台，所以使用新技术栈做了一个跨平台的版本，详细参见 https://github.com/CodyGit/aab2apkGUI
+
 ## 说明
 
 Google Play 自2021年8月起强制要求新应用必须使用AAB格式提交，这使得项目发布时需要从APK换成AAB，然而AAB格式又不能直接安装，需要使用官方提供工具`bundletool`进行转换，转换过程是一个命令行操作，对于一些测试人员相对复杂，所以做了这个简易的图形界面用来调度`bundletool`完成AAB到APK的转换，提高生产效率。
